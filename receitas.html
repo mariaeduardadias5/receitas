@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minhas Receitas - Receitas Gourmet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Minhas Receitas</h1>
+    <button onclick="window.location.href='home.html'">🌎 Ver Todas as Receitas</button>
+    <button onclick="window.location.href='adicionar.html'">➕ Adicionar Receita</button>
+    <div id="lista"></div>
+    <button onclick="logout()">Sair</button>
+  </div>
+
+  <!-- Modal de edição -->
+  <div id="modalEditar" class="modal">
+    <div class="modal-content">
+      <h2>Editar Receita</h2>
+      <input type="text" id="editNome" placeholder="Nome da receita" required>
+      <textarea id="editIngredientes" placeholder="Ingredientes" required></textarea>
+      <textarea id="editPreparo" placeholder="Modo de preparo" required></textarea>
+      <input type="text" id="editTempo" placeholder="Tempo de preparo (minutos)">
+      <button onclick="salvarEdicao()">Salvar Alterações</button>
+      <button onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+
+  <script>
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!usuario) {
+      alert("Faça login primeiro!");
+      window.location.href = "login.html";
+    }
+
+    const lista = document.getElementById('lista');
+    let receitas = JSON.parse(localStorage.getItem('receitas')) || [];
+
+    // ✅ Agora filtra pelas receitas cujo autor é o nome do usuário
+    receitas = receitas.filter(r => r.autor === usuario.nome);
+
+    let receitaEditando = null;
+
+    function mostrarReceitas() {
+      lista.innerHTML = '';
+      if (receitas.length === 0) {
+        lista.innerHTML = '<p>Nenhuma receita cadastrada.</p>';
+        return;
+      }
+
+      receitas.forEach(r => {
+        const div = document.createElement('div');
+        div.classList.add('receita');
+        div.innerHTML = `
+          <h2>${r.nome}</h2>
+          <p><b>Ingredientes:</b> ${r.ingredientes}</p>
+          <p><b>Preparo:</b> ${r.preparo}</p>
+          <p><b>Tempo:</b> ${r.tempo} min</p>
+          <p><b>Autor:</b> ${r.autor}</p>
+          <button class="btn btn-editar" onclick="abrirModal(${r.id})">✏️ Editar</button>
+          <button class="btn btn-excluir" onclick="excluir(${r.id})">🗑️ Excluir</button>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    function excluir(id) {
+      if (confirm("Tem certeza que deseja excluir esta receita?")) {
+        receitas = receitas.filter(r => r.id !== id);
+        const todas = JSON.parse(localStorage.getItem('receitas')) || [];
+        const novas = todas.filter(r => r.id !== id);
+        localStorage.setItem('receitas', JSON.stringify(novas));
+        mostrarReceitas();
+      }
+    }
+
+    // ===== Modal de Edição =====
+    const modal = document.getElementById('modalEditar');
+    const editNome = document.getElementById('editNome');
+    const editIngredientes = document.getElementById('editIngredientes');
+    const editPreparo = document.getElementById('editPreparo');
+    const editTempo = document.getElementById('editTempo');
+
+    function abrirModal(id) {
+      receitaEditando = receitas.find(r => r.id === id);
+      if (!receitaEditando) return;
+
+      editNome.value = receitaEditando.nome;
+      editIngredientes.value = receitaEditando.ingredientes;
+      editPreparo.value = receitaEditando.preparo;
+      editTempo.value = receitaEditando.tempo;
+
+      modal.style.display = 'flex';
+    }
+
+    function fecharModal() {
+      modal.style.display = 'none';
+      receitaEditando = null;
+    }
+
+    function salvarEdicao() {
+      if (!receitaEditando) return;
+
+      receitaEditando.nome = editNome.value;
+      receitaEditando.ingredientes = editIngredientes.value;
+      receitaEditando.preparo = editPreparo.value;
+      receitaEditando.tempo = editTempo.value;
+
+      // Atualiza no localStorage
+      const todas = JSON.parse(localStorage.getItem('receitas')) || [];
+      const indice = todas.findIndex(r => r.id === receitaEditando.id);
+      if (indice !== -1) todas[indice] = receitaEditando;
+
+      localStorage.setItem('receitas', JSON.stringify(todas));
+      receitas = todas.filter(r => r.autor === usuario.nome);
+
+      fecharModal();
+      mostrarReceitas();
+      alert("Receita atualizada com sucesso!");
+    }
+
+    // Fecha modal clicando fora
+    window.onclick = function(event) {
+      if (event.target === modal) fecharModal();
+    }
+
+    function logout() {
+      localStorage.removeItem('usuarioLogado');
+      window.location.href = "login.html";
+    }
+
+    mostrarReceitas();
+  </script>
+</body>
+</html>
