@@ -165,4 +165,11 @@ button:hover {
   color: #555;
   font-style: italic;
   margin-top: 20px;
+
 }
+
+    .cadastro-link a {
+      color: #086201;
+      text-decoration: none;
+      font-weight: bold;
+    }
